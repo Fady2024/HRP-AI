@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-from sklearn.preprocessing import LabelEncoder, OneHotEncoder, StandardScaler
+from sklearn.preprocessing import LabelEncoder, StandardScaler
 
 # --- DATA LOADING ---
 # Load diabetes dataset
@@ -89,7 +89,7 @@ admission_source_dict={
 data['admission_source_id'] = data['admission_source_id'].map(admission_source_dict)
 
 # Display decoded categorical fields
-print(data[['admission_type_id','discharge_disposition_id','admission_source_id']])
+print(data[['admission_type_id','discharge_disposition_id','admission_source_id']].head())
 
 # Task 2: Handle missing values
 
@@ -97,12 +97,14 @@ print(data[['admission_type_id','discharge_disposition_id','admission_source_id'
 data.replace('?',np.nan,inplace=True)
 
 # Display count of null values in each column
+print("Null values in each column:")
 print(data.isnull().sum())
 
 # Drop weight column (98% missing values)
 data.drop(columns=['weight'],inplace=True)
 
 # Check race distribution
+print("Race distribution:")
 print(data['race'].value_counts(normalize=True))
 
 # Handle missing values for each column
@@ -121,42 +123,76 @@ data['admission_source_id'] = data['admission_source_id'].fillna('Not Available'
 data.dropna(subset=['diag_1'], inplace=True)
 
 # Verify all nulls are handled
-print(data.isnull().sum())
+print("\nAfter handling nulls:")
+print(data.isnull().sum().sum())
 
-# Task 3: Encode categorical features (Label Encoding)
-le = LabelEncoder()
-for column in data.select_dtypes(include=['object']).columns:
-  data[column] = le.fit_transform(data[column])
+print(f"Data shape after handling missing values: {data.shape}")
 
 # --- FADY'S TASKS ---
-# Task 1: One-hot encoding for categorical variables
-categorical_cols = ['admission_type_id', 'discharge_disposition_id', 'admission_source_id', 
-                    'race', 'gender', 'age', 'payer_code', 'medical_specialty', 
-                    'A1Cresult', 'max_glu_serum', 'change', 'diabetesMed', 'readmitted']
-onehot_encoder = OneHotEncoder(sparse_output=False, drop='first')
-encoded_cats = onehot_encoder.fit_transform(data[categorical_cols])
-encoded_df = pd.DataFrame(encoded_cats, columns=onehot_encoder.get_feature_names_out(categorical_cols))
+print("\nTarget variable distribution before transformation:")
+print(data['readmitted'].value_counts())
 
-# Drop original columns and concatenate one-hot encoded columns
-data = data.drop(columns=categorical_cols)
-data = pd.concat([data, encoded_df], axis=1)
+# Map the target variable 'readmitted'
+readmitted_mapping = {
+    'NO': 0,
+    '>30': 0,
+    '<30': 1
+}
+if '<30' in data['readmitted'].values:
+    data['readmitted'] = data['readmitted'].map(readmitted_mapping)
+    print("Converted readmitted to binary: 1 for <30 days, 0 for others")
+    print(data['readmitted'].value_counts())
+
+# Task 3: Encode categorical features using Label Encoding
+le = LabelEncoder()
+categorical_cols = data.select_dtypes(include=['object']).columns
+print(f"\nApplying Label Encoding to {len(categorical_cols)} categorical columns")
+
+for column in categorical_cols:
+    if column != 'readmitted':
+        data[column] = le.fit_transform(data[column])
+        print(f"Encoded {column}")
 
 # Task 2: Remove outliers using IQR method
-numeric_cols = data.select_dtypes(include=['int64','float64']).columns
-for col in numeric_cols:
+numeric_cols_for_outlier_removal = ['num_lab_procedures', 'num_procedures', 'num_medications',
+                                   'number_outpatient', 'number_emergency', 
+                                   'number_inpatient', 'number_diagnoses']
+
+print(f"Data shape before outlier removal: {data.shape}")
+original_count = len(data)
+
+for col in numeric_cols_for_outlier_removal:
     Q1 = data[col].quantile(0.25)
     Q3 = data[col].quantile(0.75)
     IQR = Q3 - Q1
-    lower = Q1 - 1.5 * IQR
-    upper = Q3 + 1.5 * IQR
+    lower = Q1 - 3.0 * IQR
+    upper = Q3 + 3.0 * IQR
     data = data[(data[col] >= lower) & (data[col] <= upper)]
 
+removed_pct = (original_count - len(data)) / original_count * 100
+print(f"Removed {removed_pct:.2f}% of rows as outliers")
+print(f"Data shape after outlier removal: {data.shape}")
+
 # Task 3: Standardize numerical columns
-scaler = StandardScaler()
-data[numeric_cols] = scaler.fit_transform(data[numeric_cols])
+numeric_cols_to_standardize = data.select_dtypes(include=['int64', 'float64']).columns.tolist()
+binary_cols = []
+for col in numeric_cols_to_standardize:
+    if data[col].nunique() <= 2:
+        binary_cols.append(col)
+
+numeric_cols = [col for col in numeric_cols_to_standardize if col not in binary_cols]
+
+if numeric_cols_to_standardize:
+    print(f"Standardizing {len(numeric_cols_to_standardize)} numerical columns")
+    print(f"Examples: {numeric_cols_to_standardize[:5]}")
+    
+    scaler = StandardScaler()
+    data[numeric_cols] = scaler.fit_transform(data[numeric_cols])
 
 # --- END OF PREPROCESSING ---
+print(f"\nFinal data shape: {data.shape}")
 # Data is now ready for EDA and model development
 
 # Save preprocessed data now is ready for use
 data.to_csv("dataset_diabetes/preprocessed_data.csv", index=False)
+print("Saved preprocessed data to dataset_diabetes/preprocessed_data.csv")

@@ -1,0 +1,6 @@
+{
+    "files": [
+        "widget.py",
+        "train_models.py"
+    ]
+}

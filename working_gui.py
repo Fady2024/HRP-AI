@@ -23,6 +23,25 @@ class HospitalReadmissionGUI(QWidget):
         
         self.setWindowTitle("Hospital Readmission Prediction System")
         self.setMinimumSize(1200, 800)
+        self.diagnosis_categories = {
+            'Infectious Diseases': (1, 139),
+            'Cancer & Neoplasms': (140, 239),
+            'Endocrine Disorders': (240, 279),
+            'Blood Disorders': (280, 289),
+            'Mental Health Disorders': (290, 319),
+            'Nervous System Diseases': (320, 389),
+            'Heart & Circulatory Conditions': (390, 459),
+            'Respiratory Diseases': (460, 519),
+            'Digestive System Diseases': (520, 579),
+            'Kidney & Urinary Disorders': (580, 629),
+            'Pregnancy-Related Conditions': (630, 679),
+            'Skin Disorders': (680, 709),
+            'Muscle & Bone Conditions': (710, 739),
+            'Congenital Disorders': (740, 759),
+            'Perinatal Conditions': (760, 779),
+            'Symptoms & Non-Specific Conditions': (780, 799),
+            'Injuries & Poisoning': (800, 999)
+        }
 
         self.load_models()
 
@@ -67,26 +86,6 @@ class HospitalReadmissionGUI(QWidget):
             else:
                 print("No trained models found. Using rule-based approach.")
                 self.use_ml_model = False
-
-                self.diagnosis_categories = {
-                    'Infectious Diseases': (1, 139),
-                    'Cancer & Neoplasms': (140, 239),
-                    'Endocrine Disorders': (240, 279),
-                    'Blood Disorders': (280, 289),
-                    'Mental Health Disorders': (290, 319),
-                    'Nervous System Diseases': (320, 389),
-                    'Heart & Circulatory Conditions': (390, 459),
-                    'Respiratory Diseases': (460, 519),
-                    'Digestive System Diseases': (520, 579),
-                    'Kidney & Urinary Disorders': (580, 629),
-                    'Pregnancy-Related Conditions': (630, 679),
-                    'Skin Disorders': (680, 709),
-                    'Muscle & Bone Conditions': (710, 739),
-                    'Congenital Disorders': (740, 759),
-                    'Perinatal Conditions': (760, 779),
-                    'Symptoms & Non-Specific Conditions': (780, 799),
-                    'Injuries & Poisoning': (800, 999)
-                }
                 
         except Exception as e:
             print(f"Error loading models: {str(e)}")
